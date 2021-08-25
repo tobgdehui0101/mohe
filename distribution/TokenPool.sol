@@ -233,7 +233,7 @@ contract TokenPool is Ownable
         return tokenAdress;
     }
 
-    address BURN_ADDRESS = 0x0000000000000000000000000000000000000000;//5
+    address BURN_ADDRESS = 0x6666666666666666666666666666666666666666;//5
 
     //查询当前的余额
     function getCoinBalance() public view returns(uint256){
