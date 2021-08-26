@@ -13,26 +13,52 @@ contract TokenPool is Ownable
 {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
-
-    //主token
-    IERC20 public mb = IERC20(0xF2987579B3B03D4581cf8Fe951682222A992143a);
     //总算力
     uint256 public totalPower;
     //总能耗
     uint256 public totalEniger;
+    //正式
+    IERC20 public mb = IERC20(0x741F265192c22322C3e4949D9e2190fa70D1587B);
+    address public usdt = 0x55d398326f99059fF775485246999027B3197955;
+    address public eth = 0x2170Ed0880ac9A755fd29B2688956BD959F933F8;
+    address public btc = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
+    address public bnb = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
+    //LP
+    address public _mb_usdt = 0x235CD29ad992896CA875C85fe22c0bE617083EF4;
+    address public _btc_usdt = 0x3F803EC2b816Ea7F06EC76aA2B6f2532F9892d62;
+    address public _eth_usdt = 0x531FEbfeb9a61D948c384ACFBe6dCc51057AEa7e;
 
-    uint256 public mb_price = 5 * 1e17;  //1MB=0.5U
-    uint256 public bnb_price = 300 * 1e18; //1BNB=300U
+    address public _bnb_usdt = 0x16b9a82891338f9bA80E2D6970FddA79D1eb0daE;
+
     uint256 public usdt_price = 1 * 1e18; //1U=1U
-    uint256 public eth_price = 1000 * 1e18; //1ETH=1000U
-    uint256 public btc_price = 10000 * 1e18; //1BTC=10000U
-    address public usdt = 0x7243DAE68eA01f65d9304F26e968581b3a3c6e9F;
-    address public eth = 0xABFe04F68e79F186A7E437312b2f6EEA4F6dF2A6;
-    address public btc = 0xF2987579B3B03D4581cf8Fe951682222A992143a;
 
-//    address public usdt = 0x337610d27c682e347c9cd60bd4b3b107c9d34ddd;
-//    address public eth = 0xd66c6b4f0be8ce5b39d52e0fd1344c389929b378;
-//    address public btc = 0x6ce8da28e2f864420840cf74474eff5fd80e65b8;
+    function mb_price() public view returns(uint){
+        uint bufBalance = mb.balanceOf(_mb_usdt);
+        uint usdtBalance = IERC20(usdt).balanceOf(_mb_usdt);
+        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
+        return Bufprice;
+    }
+
+    function eth_price() public view returns(uint){
+        uint bufBalance = IERC20(eth).balanceOf(_eth_usdt);
+        uint usdtBalance = IERC20(usdt).balanceOf(_eth_usdt);
+        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
+        return Bufprice;
+    }
+
+    function btc_price() public view returns(uint){
+        uint bufBalance = IERC20(btc).balanceOf(_btc_usdt);
+        uint usdtBalance = IERC20(usdt).balanceOf(_btc_usdt);
+        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
+        return Bufprice;
+    }
+
+    function bnb_price() public view returns(uint){
+        uint bufBalance = IERC20(bnb).balanceOf(_bnb_usdt);
+        uint usdtBalance = IERC20(usdt).balanceOf(_bnb_usdt);
+        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
+        return Bufprice;
+    }
 
     address playerManager;
     event RewardAdded(uint256 reward);
@@ -41,19 +67,9 @@ contract TokenPool is Ownable
     event RewardPaid(address indexed user, uint256 reward);
 
     constructor(
-        uint256 starttime_,
-        address playermanager_,
-        address mb_,
-        address usdt_,
-        address eth_,
-        address btc_
+        uint256 starttime_
     ) public {
         starttime = starttime_;
-        playerManager = playermanager_;
-        mb = IERC20(mb_);
-        usdt = usdt_;
-        eth = eth_;
-        btc = btc_;
     }
 
     function setMb(address address_) public onlyOwner{
@@ -252,30 +268,27 @@ contract TokenPool is Ownable
         address tokenAdress = usdt;
         //0:bnb,1:usdt,2:eth,3:btc
         if(coin == 0){
-            price = bnb_price;
+            price = bnb_price();
             require(msg.value >= tokenAmount, 'your send bnb is not enoph');
         }
         if(coin == 2){
-            price = eth_price;
+            price = eth_price();
             tokenAdress = eth;
         }
         if(coin == 3){
-            price = btc_price;
+            price = btc_price();
             tokenAdress = btc;
         }
         uint beiLv_ = getBeiLv(pasentMb, week);
+        uint256 tokenMbAmount = tokenAmount.mul(price).div(mb_price());
+        uint256 mbAmount = tokenMbAmount.mul(pasentMb).div(100-pasentMb);
+        uint256 thisPower = (mbAmount.add(tokenMbAmount)).mul(mb_price()).div(1e18);
+        thisPower = thisPower.mul(beiLv_).div(1e18);//算力保留2位小数
 
         if(coin != 0){
             IERC20(tokenAdress).safeTransferFrom(msg.sender, address(this), tokenAmount);
         }
-
-        uint256 tokenMbAmount = tokenAmount.mul(price).div(mb_price);
-        uint256 mbAmount = tokenMbAmount.mul(pasentMb).div(100-pasentMb);
-
         mb.safeTransferFrom(msg.sender, address(this), mbAmount);
-
-        uint256 thisPower = (mbAmount.add(tokenMbAmount)).mul(mb_price).div(1e18);
-        thisPower = thisPower.mul(beiLv_).div(1e18);//算力保留2位小数
 
         uint256 lastTime = 4 weeks;
         if(week == 1)lastTime = 1 weeks;
