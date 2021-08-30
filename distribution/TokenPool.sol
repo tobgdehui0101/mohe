@@ -153,7 +153,7 @@ contract TokenPool is Ownable
         if(totalPower <= 1000 * 10000){
             return 85500 * 1e18;
         }
-        return 128250 * 1e18;
+        return 85500 * 1e18;
     }
 
     //获取每秒钟收益
