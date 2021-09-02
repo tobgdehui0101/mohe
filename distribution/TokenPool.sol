@@ -8,6 +8,8 @@ import '@openzeppelin/contracts/utils/Address.sol';
 import '@openzeppelin/contracts/token/ERC20/SafeERC20.sol';
 import '../interfaces/IRewardDistributionRecipient.sol';
 import '../interfaces/IPlayerManager.sol';
+import "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol";
+
 
 contract TokenPool is Ownable
 {
@@ -19,43 +21,40 @@ contract TokenPool is Ownable
     uint256 public totalEniger;
     //正式
     IERC20 public mb = IERC20(0x741F265192c22322C3e4949D9e2190fa70D1587B);
+    address public _mb_usdt = 0x235CD29ad992896CA875C85fe22c0bE617083EF4;
+
     address public usdt = 0x55d398326f99059fF775485246999027B3197955;
     address public eth = 0x2170Ed0880ac9A755fd29B2688956BD959F933F8;
     address public btc = 0x7130d2A12B9BCbFAe4f2634d864A1Ee1Ce3Ead9c;
     address public bnb = 0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c;
     //LP
-    address public _mb_usdt = 0x235CD29ad992896CA875C85fe22c0bE617083EF4;
-    address public _btc_usdt = 0x3F803EC2b816Ea7F06EC76aA2B6f2532F9892d62;
-    address public _eth_usdt = 0x531FEbfeb9a61D948c384ACFBe6dCc51057AEa7e;
-
-    address public _bnb_usdt = 0x16b9a82891338f9bA80E2D6970FddA79D1eb0daE;
+    address public _btc_usdt = 0x264990fbd0A4796A3E3d8E37C4d5F87a3aCa5Ebf;
+    address public _eth_usdt = 0x9ef1B8c0E4F7dc8bF5719Ea496883DC6401d5b2e;
+    address public _bnb_usdt = 0x0567F2323251f0Aab15c8dFb1967E4e8A7D42aeE;
 
     uint256 public usdt_price = 1 * 1e18; //1U=1U
+
+    function eth_price() public view returns (uint) {
+        ( uint80 roundID, int price, uint startedAt, uint timeStamp, uint80 answeredInRound) = AggregatorV3Interface(_eth_usdt).latestRoundData();
+        uint b = uint(price);
+        return b.mul(10 ** 10);
+    }
+
+    function btc_price() public view returns (uint) {
+        ( uint80 roundID, int price, uint startedAt, uint timeStamp, uint80 answeredInRound) = AggregatorV3Interface(_btc_usdt).latestRoundData();
+        uint b = uint(price);
+        return b.mul(10 ** 10);
+    }
+
+    function bnb_price() public view returns (uint) {
+        ( uint80 roundID, int price, uint startedAt, uint timeStamp, uint80 answeredInRound) = AggregatorV3Interface(_bnb_usdt).latestRoundData();
+        uint b = uint(price);
+        return b.mul(10 ** 10);
+    }
 
     function mb_price() public view returns(uint){
         uint bufBalance = mb.balanceOf(_mb_usdt);
         uint usdtBalance = IERC20(usdt).balanceOf(_mb_usdt);
-        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
-        return Bufprice;
-    }
-
-    function eth_price() public view returns(uint){
-        uint bufBalance = IERC20(eth).balanceOf(_eth_usdt);
-        uint usdtBalance = IERC20(usdt).balanceOf(_eth_usdt);
-        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
-        return Bufprice;
-    }
-
-    function btc_price() public view returns(uint){
-        uint bufBalance = IERC20(btc).balanceOf(_btc_usdt);
-        uint usdtBalance = IERC20(usdt).balanceOf(_btc_usdt);
-        uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
-        return Bufprice;
-    }
-
-    function bnb_price() public view returns(uint){
-        uint bufBalance = IERC20(bnb).balanceOf(_bnb_usdt);
-        uint usdtBalance = IERC20(usdt).balanceOf(_bnb_usdt);
         uint  Bufprice = usdtBalance.mul(10 ** 18).div(bufBalance);
         return Bufprice;
     }
